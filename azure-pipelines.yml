@@ -38,9 +38,11 @@ stages:
         unzip sonar-scanner.zip
         sudo mv sonar-scanner-*/ /opt/sonar-scanner
 
-        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        source /etc/profile.d/sonar-scanner.sh
+        # Set environment variables for Sonar Scanner
+        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" >> ~/.bashrc
+        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" >> ~/.bashrc
+        source ~/.bashrc
+
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
 
@@ -49,9 +51,12 @@ stages:
     steps:
     - script: |
         echo "Running Sonar Scanner"
-        source /etc/profile.d/sonar-scanner.sh
+        
+        # Ensure environment variables are sourced for the current shell
+        source ~/.bashrc
+        
         sonar-scanner \
-          -Dsonar.projectKey=	Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU \
+          -Dsonar.projectKey=Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU \
           -Dsonar.sources=. \
           -Dsonar.host.url=http://128.24.102.209:9000/ \
           -Dsonar.login=sqa_1a888ada9fa7bc8ce02ebd1280b648853db90911
