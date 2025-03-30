@@ -28,40 +28,6 @@ stages:
         echo "Upgrading Container"
         sudo apt update
       displayName: Upgrading Container
-      
-- stage: BuildAndPushImage
-  displayName: 'Build and Push Docker Image'
-  jobs:
-    - job: BuildDockerImage
-      displayName: 'Build , Scan & Push Docker Image'
-      steps:
-        - script: |
-            echo "Logging in to Docker Hub..."
-            echo $(dockerPassword) | docker login -u $(dockerUsername) --password-stdin
-          displayName: 'Logging into Container Registries'
-
-        - script: |  
-            docker build . -t "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
-          displayName: 'Building Docker Image'
-
-        - script: | 
-            curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
-            sh install-scout.sh
-            docker scout cves \
-              --format only-packages \
-              --only-vuln-packages \
-              --output $(Build.ArtifactStagingDirectory)/docker_scout_report.json \
-              "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
-          displayName: 'Installing Docker Scout & Scanning Image'
-            
-        - script: |
-            docker push "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
-          displayName: 'Pushing the image to ACR'
-
-        - publish: $(Build.ArtifactStagingDirectory)/docker_scout_report.json
-          artifact: docker_scout_report    
-          displayName: 'Publish Docker Scout Report'
-
 
 - stage: SonarScan
   displayName: Sonar Scan
@@ -101,3 +67,36 @@ stages:
           -Dsonar.host.url=http://128.24.102.209:9000/ \
           -Dsonar.login=sqp_00bfc5edbc114030be07515080b2bba0ccde3655
       displayName: Running Sonar Scanner
+
+- stage: BuildAndPushImage
+  displayName: 'Build and Push Docker Image'
+  jobs:
+    - job: BuildDockerImage
+      displayName: 'Build , Scan & Push Docker Image'
+      steps:
+        - script: |
+            echo "Logging in to Docker Hub..."
+            echo $(dockerPassword) | docker login -u $(dockerUsername) --password-stdin
+          displayName: 'Logging into Container Registries'
+
+        - script: |  
+            docker build . -t "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
+          displayName: 'Building Docker Image'
+
+        - script: | 
+            curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
+            sh install-scout.sh
+            docker scout cves \
+              --format only-packages \
+              --only-vuln-packages \
+              --output $(Build.ArtifactStagingDirectory)/docker_scout_report.json \
+              "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
+          displayName: 'Installing Docker Scout & Scanning Image'
+            
+        - script: |
+            docker push "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
+          displayName: 'Pushing the image to ACR'
+
+        - publish: $(Build.ArtifactStagingDirectory)/docker_scout_report.json
+          artifact: docker_scout_report    
+          displayName: 'Publish Docker Scout Report'
