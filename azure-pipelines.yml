@@ -19,7 +19,7 @@ stages:
     steps:
     - script: |
         echo "Upgrading Container"
-        sudo apt upgrade -y
+        sudo apt update
 
 - stage: InstallSonarScanner
   displayName: Install Sonar Scanner
@@ -47,7 +47,7 @@ stages:
 
         echo "Sonar Scanner installed successfully"
 
-    # Optionally, you can verify the installation after installing SonarScanner
     - script: |
-        sonar-scanner --version
+        # Explicitly use the full path to sonar-scanner for verification
+        /opt/sonar-scanner/bin/sonar-scanner --version
         echo "Sonar Scanner version displayed above"
