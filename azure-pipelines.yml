@@ -31,7 +31,7 @@ stages:
         echo "Installing Sonar Scanner"
         # Example for installation, adjust based on your needs
         sudo apt install openjdk-11-jre -y
-        curl -sS https://downloads.sonarsource.com/sonar-scanner-cli/sonar-scanner-4.6.2.2472-linux.zip -o sonar-scanner.zip
+        curl -sS https://binaries.sonarsource.com/?prefix=Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.2.2472-linux.zip -o sonar-scanner.zip
         if [ ! -f "sonar-scanner-${SONAR_SCANNER_VERSION}-linux.zip" ]; then
           echo "Error: Sonar Scanner zip file download failed"
           exit 1
