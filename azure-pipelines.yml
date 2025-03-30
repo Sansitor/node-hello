@@ -44,6 +44,7 @@ stages:
         curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
         unzip sonar-scanner.zip
         sudo mv sonar-scanner-*/ /opt/sonar-scanner
+        ls -la /opt/sonar-scanner
         echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         source /etc/profile.d/sonar-scanner.sh
@@ -59,6 +60,8 @@ stages:
     steps:
     - script : |
         echo "Running Sonar Scanner"
+        ls -la /opt/sonar-scanner
+        cat /etc/profile.d/sonar-scanner.sh
         echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         source /etc/profile.d/sonar-scanner.sh
