@@ -43,12 +43,19 @@ stages:
         curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
         unzip sonar-scanner.zip
         sudo mv sonar-scanner-*/ /opt/sonar-scanner
+        ls -la /opt/sonar-scanner
         echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         source /etc/profile.d/sonar-scanner.sh
+        echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
     - script : |
         echo "Running Sonar Scanner"
+        ls -la /opt/sonar-scanner
+        cat /etc/profile.d/sonar-scanner.sh
+        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+        source /etc/profile.d/sonar-scanner.sh
         sonar-scanner \
           -Dsonar.projectKey=Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU \
           -Dsonar.sources=. \
@@ -60,7 +67,7 @@ stages:
   displayName: 'Build and Push Docker Image'
   jobs:
     - job: BuildDockerImage
-      displayName: 'Build, Scan & Push Docker Image'
+      displayName: 'Build , Scan & Push Docker Image'
       steps:
         - script: |
             echo "Logging in to Docker Hub..."
@@ -73,12 +80,12 @@ stages:
 
         - script: | 
            curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
-           sh install-scout.sh
-           docker scout cves \
-             --format only-packages \
-             --only-vuln-packages \
-             --output $(Build.ArtifactStagingDirectory)/docker_scout_report.json \
-             "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
+            sh install-scout.sh
+            docker scout cves \
+              --format only-packages \
+              --only-vuln-packages \
+              --output $(Build.ArtifactStagingDirectory)/docker_scout_report.json \
+              "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
           displayName: 'Installing Docker Scout & Scanning Image'
             
         - script: |
@@ -96,69 +103,20 @@ stages:
         - publish: $(Build.ArtifactStagingDirectory)/sanchit.tar
           artifact: docker_image_tar
           displayName: 'Publish Docker Image Tar File'
-
+        
 - stage: CopyToVM
-  displayName: 'Copy Docker Image Tar to VM'
+  displayName: 'Build and Push Docker Image'
   jobs:
     - job: CopyToVM
-      displayName: 'Copying Image Tar file to VM'
+      displayName: 'Copying Image Tar file to VM.'
       steps:
       - download: current
         artifact: docker_image_tar
         displayName: 'Download Docker Image Tar'
       - script: |
+         docker load -i $(Pipeline.Workspace)/docker_image_tar/sanchit.tar
          sudo apt -y install sshpass
          mkdir -p ~/.ssh
          ssh-keyscan 128.24.102.209 >> ~/.ssh/known_hosts
          sshpass -p "ranjeet@123qwe" scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar ranjeet@128.24.102.209:/home/ranjeet/
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
-
-- stage: CopyAndRunScript
-  displayName: 'Copy and Run Deployment Script on VM'
-  dependsOn: CopyToVM
-  jobs:
-    - job: CopyAndRun
-      displayName: 'Copy and Run container_start.sh'
-      steps:
-      - script: |
-         echo "Creating container_start.sh..."
-         cat << 'EOF' > $(Build.ArtifactStagingDirectory)/container_start.sh
-         #!/bin/bash
-         CONTAINER_NAME="sanchit"
-         IMAGE_NAME="sanchit"
-         IMAGE_TAR="/home/ranjeet/sanchit.tar"
-
-         echo "Loading Docker image..."
-         docker load -i "$IMAGE_TAR"
-
-         # Stop and remove existing container if running
-         if docker ps -a --format '{{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
-             echo "Stopping and removing existing container..."
-             docker stop "$CONTAINER_NAME"
-             docker rm "$CONTAINER_NAME"
-         fi
-
-         echo "Starting new container..."
-         docker run -itd -p 80:80 --name "$CONTAINER_NAME" "$IMAGE_NAME"
-
-         echo "Deployment complete!"
-         EOF
-
-         chmod +x $(Build.ArtifactStagingDirectory)/container_start.sh
-        displayName: 'Create container_start.sh Locally'
-
-      - publish: $(Build.ArtifactStagingDirectory)/container_start.sh
-        artifact: container_start_script
-        displayName: 'Publish container_start.sh Artifact'
-
-      - download: current
-        artifact: container_start_script
-        displayName: 'Download container_start.sh to Agent'
-
-      - script: |
-         sshpass -p "ranjeet@123qwe" scp $(Pipeline.Workspace)/container_start_script/container_start.sh ranjeet@128.24.102.209:/home/ranjeet/
-        displayName: 'Copy container_start.sh to Azure VM'
-
-      - script: |
-         sshpass -p "ranjeet@123qwe" ssh ranjeet@128.24.102.209 "chmod +x /home/ranjeet/container_start.sh && /home/ranjeet/container_start.sh"
-        displayName: 'Run container_start.sh on Azure VM'
