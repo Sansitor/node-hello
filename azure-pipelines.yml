@@ -55,7 +55,7 @@ stages:
           displayName: 'Installing Docker Scout & Scanning Image'
             
         - script: |
-            docker push "$(ACR_REGISTRY_URL)/$(ACR_IMAGE_NAME):$(ACR_IMAGE_TAG)"
+            docker push "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
           displayName: 'Pushing the image to ACR'
 
         - publish: $(Build.ArtifactStagingDirectory)/docker_scout_report.json
