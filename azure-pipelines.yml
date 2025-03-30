@@ -14,3 +14,9 @@ stages:
     - script: |
         echo "Updating Container"
         apt update
+  - job: UpgradingContainer
+    displayName: Updating
+    steps:
+    - script: |
+        echo "Updating Container"
+        apt upgrade -y
