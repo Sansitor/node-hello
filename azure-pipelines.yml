@@ -5,18 +5,12 @@ pool:
   vmImage: ubuntu-latest
 
 stages:
-- stage: Pipeline Container Update
+- stage: PipelineContainerUpdate
   displayName: Updating Container
   jobs:
-  - job: Update
+  - job: UpdateContainer
     displayName: Updating
     steps:
     - script: |
         echo "Updating Container"
         apt update
-  - job: Update
-    displayName: Updating
-    steps:
-    - script: |
-        echo "Updating Container"
-        apt upgrade -y
