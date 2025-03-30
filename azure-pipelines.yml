@@ -27,7 +27,7 @@ stages:
     steps:
     - script: |
         echo "Upgrading Container"
-        sudo apt upgrade -y
+        sudo apt update
       displayName: Upgrading Container
       
 - stage: SonarScannerInstall
@@ -39,7 +39,6 @@ stages:
     steps:
     - script: |
         echo "Installing Sonar Scanner"
-        sudo apt update
         sudo apt install openjdk-11-jre -y
         curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
         unzip sonar-scanner.zip
@@ -50,11 +49,6 @@ stages:
         source /etc/profile.d/sonar-scanner.sh
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
-      
-- stage: SonarScan
-  displayName: Sonar Scan
-  dependsOn: SonarScannerInstall
-  jobs:
   - job: SonarScan
     displayName: Running Sonar Code Scan
     steps:
