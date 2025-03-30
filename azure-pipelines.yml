@@ -15,18 +15,33 @@ stages:
         echo "Updating Container"
         sudo apt update
   - job: UpgradingContainer
-    displayName: Updating
+    displayName: Upgrading
     steps:
     - script: |
-        echo "Updating Container"
+        echo "Upgrading Container"
         sudo apt upgrade -y
 
-- stage: InsatallSonarScanner
+- stage: InstallSonarScanner
   displayName: Install Sonar Scanner
   jobs:
-  - job: UpdateContainer
-    displayName: Updating
+  - job: InstallSonar
+    displayName: Installing Sonar Scanner
     steps:
     - script: |
-        echo "Updating Container"
-        sudo apt update
+        echo "Installing Sonar Scanner"
+        # Example for installation, adjust based on your needs
+        sudo apt install openjdk-11-jre -y
+        curl -sS https://downloads.sonarsource.com/sonar-scanner-cli/sonar-scanner-4.6.2.2472-linux.zip -o sonar-scanner.zip
+        unzip sonar-scanner.zip
+        sudo mv sonar-scanner-*/bin/sonar-scanner /usr/local/bin/
+        echo "Sonar Scanner installed successfully"
+
+- stage: SonarQualityCheck
+  displayName: Sonar Quality Check
+  jobs:
+  - job: QualityCheck
+    displayName: Running Sonar Quality Check
+    steps:
+    - script: |
+        echo "Running Sonar Quality Check"
+        sonar-scanner -Dsonar.projectKey=your_project_key -Dsonar.sources=src -Dsonar.host.url=http://your_sonar_host
