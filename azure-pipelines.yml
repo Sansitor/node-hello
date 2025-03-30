@@ -4,6 +4,12 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  DOCKER_USERNAME: $(DockerUsername)
+  DOCKER_PASSWORD: $(DockerPassword)
+  IMAGE_NAME: "sanchit"
+  IMAGE_TAG: "latest"
+
 stages:
 - stage: PipelineContainerUpdate
   displayName: Updating Container
@@ -23,6 +29,22 @@ stages:
         sudo apt update
       displayName: Upgrading Container
       
+- stage: BuildAndPushImage
+  displayName: 'Build and Push Docker Image'
+  jobs:
+    - job: BuildDockerImage
+      displayName: 'Build , Scan & Push Docker Image'
+      steps:
+        - script: |
+            echo "Logging in to Docker Hub..."
+            echo $(dockerPassword) | docker login -u $(dockerUsername) --password-stdin
+          displayName: 'Logging into Container Registries'
+
+        - script: |  
+            docker build . -t "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
+          displayName: 'Building Docker Image'
+
+
 - stage: SonarScan
   displayName: Sonar Scan
   jobs:
