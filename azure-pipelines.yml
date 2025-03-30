@@ -13,13 +13,13 @@ stages:
     steps:
     - script: |
         echo "Updating Container"
-        apt update
+        sudo apt update
   - job: UpgradingContainer
     displayName: Updating
     steps:
     - script: |
         echo "Updating Container"
-        apt upgrade -y
+        sudo apt upgrade -y
 
 - stage: InsatallSonarScanner
   displayName: Install Sonar Scanner
@@ -29,4 +29,4 @@ stages:
     steps:
     - script: |
         echo "Updating Container"
-        apt update
+        sudo apt update
