@@ -14,13 +14,15 @@ stages:
     - script: |
         echo "Updating Container"
         sudo apt update
+      displayName: Updating Container
   - job: UpgradingContainer
     displayName: Upgrading
     steps:
     - script: |
         echo "Upgrading Container"
         sudo apt update
-
+      displayName: Upgrading Container
+      
 - stage: InstallSonarScanner
   displayName: Install Sonar Scanner
   jobs:
@@ -29,25 +31,15 @@ stages:
     steps:
     - script: |
         echo "Installing Sonar Scanner"
-        # Install OpenJDK 11 for SonarScanner
         sudo apt update
         sudo apt install openjdk-11-jre -y
 
-        # Download and install SonarScanner
         curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
         unzip sonar-scanner.zip
         sudo mv sonar-scanner-*/ /opt/sonar-scanner
 
-        # Set up environment variables for SonarScanner
         echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-
-        # Load the new profile to use sonar-scanner command
         source /etc/profile.d/sonar-scanner.sh
-
         echo "Sonar Scanner installed successfully"
-
-    - script: |
-        # Explicitly use the full path to sonar-scanner for verification
-        /opt/sonar-scanner/bin/sonar-scanner --version
-        echo "Sonar Scanner version displayed above"
+      displayName: Installing Sonar Scanner
