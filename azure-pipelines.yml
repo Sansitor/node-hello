@@ -44,4 +44,4 @@ stages:
     steps:
     - script: |
         echo "Running Sonar Quality Check"
-        sonar-scanner -Dsonar.projectKey=your_project_key -Dsonar.sources=src -Dsonar.host.url=http://your_sonar_host
+        sonar-scanner -Dsonar.projectKey=	Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU -Dsonar.sources=src -Dsonar.host.url=http://128.24.102.209:9000/
