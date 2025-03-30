@@ -54,6 +54,7 @@ stages:
 
   - job: ScanWithSonar
     displayName: Running SonarQube Scan
+    dependsOn: InstallSonar
     steps:
     - script: |
         echo "Running Sonar Scanner"
