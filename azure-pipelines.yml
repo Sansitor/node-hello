@@ -23,8 +23,8 @@ stages:
         sudo apt update
       displayName: Upgrading Container
       
-- stage: InstallSonarScanner
-  displayName: Install Sonar Scanner
+- stage: SonarScan
+  displayName: Sonar Scan
   jobs:
   - job: InstallSonar
     displayName: Installing Sonar Scanner
@@ -43,10 +43,7 @@ stages:
         source /etc/profile.d/sonar-scanner.sh
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
-      
-- stage: SonarQubeScan
-  displayName: SonarQube Code Analysis
-  jobs:
+
   - job: ScanWithSonar
     displayName: Running SonarQube Scan
     steps:
@@ -59,4 +56,3 @@ stages:
           -Dsonar.host.url=http://128.24.102.209:9000/ \
           -Dsonar.login=sqa_1a888ada9fa7bc8ce02ebd1280b648853db90911
       displayName: Running Sonar Scanner
-
