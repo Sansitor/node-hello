@@ -99,5 +99,5 @@ stages:
           -Dsonar.projectKey=Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU \
           -Dsonar.sources=. \
           -Dsonar.host.url=http://128.24.102.209:9000/ \
-          -Dsonar.login=sqa_1a888ada9fa7bc8ce02ebd1280b648853db90911
+          -Dsonar.login=sqp_00bfc5edbc114030be07515080b2bba0ccde3655
       displayName: Running Sonar Scanner
