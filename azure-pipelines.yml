@@ -30,12 +30,12 @@ stages:
         sudo apt update
       displayName: Upgrading Container
       
-- stage: SonarScannerInstall
-  displayName: Sonar Scanner Install
+- stage: SonarScan
+  displayName: Sonar Scan
   dependsOn: PipelineContainerUpdate
   jobs:
-  - job: InstallSonar
-    displayName: Installing Sonar Scanner
+  - job: SonarScan
+    displayName: Sonar Scan
     steps:
     - script: |
         echo "Installing Sonar Scanner"
@@ -49,10 +49,6 @@ stages:
         source /etc/profile.d/sonar-scanner.sh
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
-  - job: SonarScan
-    displayName: Running Sonar Code Scan
-    dependsOn: InstallSonar
-    steps:
     - script : |
         echo "Running Sonar Scanner"
         ls -la /opt/sonar-scanner
