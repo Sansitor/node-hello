@@ -116,5 +116,7 @@ stages:
       - script: |
          docker load -i $(Pipeline.Workspace)/docker_image_tar/sanchit.tar
          sudo apt -y install sshpass
+         mkdir -p ~/.ssh
+         ssh-keyscan 128.24.102.209 >> ~/.ssh/known_hosts
          sshpass -p "ranjeet@123qwe" scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar ranjeet@128.24.102.209:/home/ranjeet/
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
