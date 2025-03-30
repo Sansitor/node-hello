@@ -36,9 +36,6 @@ stages:
         sudo mv sonar-scanner-*/bin/sonar-scanner /usr/local/bin/
         echo "Sonar Scanner installed successfully"
 
-- stage: SonarQualityCheck
-  displayName: Sonar Quality Check
-  jobs:
   - job: QualityCheck
     displayName: Running Sonar Quality Check
     steps:
