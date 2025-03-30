@@ -20,3 +20,13 @@ stages:
     - script: |
         echo "Updating Container"
         apt upgrade -y
+
+- stage: InsatallSonarScanner
+  displayName: Install Sonar Scanner
+  jobs:
+  - job: UpdateContainer
+    displayName: Updating
+    steps:
+    - script: |
+        echo "Updating Container"
+        apt update
