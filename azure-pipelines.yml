@@ -79,7 +79,7 @@ stages:
   displayName: 'Build and Push Docker Image'
   dependsOn: SonarScan
   variables:
-    - group: $(MainPipelineVars)
+    - group: $(VariableGroupName)
   jobs:
   - job: BuildDockerImage
     displayName: 'Build , Scan & Push Docker Image'
