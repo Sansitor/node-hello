@@ -10,6 +10,8 @@ variables:
   IMAGE_NAME: "sanchit-dev"
   IMAGE_TAG: "latest"
 
+#Adding this comment for testing
+
 stages:
 - stage: PipelineContainerUpdate
   displayName: Updating Container
