@@ -7,7 +7,7 @@ pool:
 variables:
   DOCKER_USERNAME: $(DockerUsername)
   DOCKER_PASSWORD: $(DockerPassword)
-  IMAGE_NAME: "sanchit"
+  IMAGE_NAME: "sanchit-main"
   IMAGE_TAG: "latest"
 
 stages:
