@@ -5,28 +5,20 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-# Determine the correct variable group based on branch
 variables:
-  - name: VariableGroupName
-    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
-      value: 'MainPipelineVars'
-    ${{ if eq(variables['Build.SourceBranchName'], 'dev') }}:
-      value: 'DevPipelineVars'
+  DOCKER_USERNAME: $(DockerUsername)
+  DOCKER_PASSWORD: $(DockerPassword)
+  BASE_IMAGE_NAME: "sanchit"
+  IMAGE_TAG: "latest"
+  # Dynamic image name based on branch
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+    IMAGE_NAME: "$(BASE_IMAGE_NAME)-main"
+  ${{ if eq(variables['Build.SourceBranchName'], 'dev') }}:
+    IMAGE_NAME: "$(BASE_IMAGE_NAME)-dev"
 
 stages:
-- stage: Initialize
-  displayName: Initialize Pipeline
-  jobs:
-  - job: SetVariables
-    displayName: Set Pipeline Variables
-    steps:
-    - script: echo "Using Variable Group: $(VariableGroupName)"
-      displayName: Display Selected Variable Group
-
 - stage: PipelineContainerUpdate
   displayName: Updating Container
-  variables:
-    - group: MainPipelineVars  # Dynamically replaced
   jobs:
   - job: UpdateContainer
     displayName: Updating
@@ -47,8 +39,6 @@ stages:
 - stage: SonarScan
   displayName: Sonar Scan
   dependsOn: PipelineContainerUpdate
-  variables:
-    - group: MainPipelineVars
   jobs:
   - job: SonarScan
     displayName: Sonar Scan
@@ -59,12 +49,19 @@ stages:
         curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
         unzip sonar-scanner.zip
         sudo mv sonar-scanner-*/ /opt/sonar-scanner
+        ls -la /opt/sonar-scanner
         echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
         source /etc/profile.d/sonar-scanner.sh
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
     - script : |
+        echo "Running Sonar Scanner"
+        ls -la /opt/sonar-scanner
+        cat /etc/profile.d/sonar-scanner.sh
+        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+        source /etc/profile.d/sonar-scanner.sh
         sonar-scanner \
           -Dsonar.projectKey=Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU \
           -Dsonar.sources=. \
@@ -74,18 +71,17 @@ stages:
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
-  variables:
-    - group: MainPipelineVars
   jobs:
     - job: BuildDockerImage
       displayName: 'Build , Scan & Push Docker Image'
       steps:
         - script: |
             echo "Logging in to Docker Hub..."
-            echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
+            echo $(dockerPassword) | docker login -u $(dockerUsername) --password-stdin
           displayName: 'Logging into Container Registries'
 
         - script: |  
+            echo "Building image: $(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
             docker build . -t "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
           displayName: 'Building Docker Image'
 
@@ -116,9 +112,7 @@ stages:
           displayName: 'Publish Docker Image Tar File'
         
 - stage: CopyToVM
-  displayName: 'Copy and Deploy to VM'
-  variables:
-    - group: MainPipelineVars
+  displayName: 'Copy to VM'
   jobs:
     - job: CopyToVM
       displayName: 'Copying Image Tar file to VM.'
