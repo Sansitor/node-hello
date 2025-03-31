@@ -1,5 +1,5 @@
 trigger:
-- main
+- dev
 
 pool:
   vmImage: ubuntu-latest
@@ -7,7 +7,7 @@ pool:
 variables:
   DOCKER_USERNAME: $(DockerUsername)
   DOCKER_PASSWORD: $(DockerPassword)
-  IMAGE_NAME: "sanchit-main"
+  IMAGE_NAME: "sanchit-dev"
   IMAGE_TAG: "latest"
 
 stages:
