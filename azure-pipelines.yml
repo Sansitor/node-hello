@@ -70,54 +70,35 @@ stages:
       displayName: Running Sonar Scanner
       
 - stage: SonarQualityGate
-  displayName: Sonar Quality Gate Check
+  displayName: 'Check Sonar Quality Gate'
   dependsOn: SonarScan
   jobs:
-  - job: QualityGate
-    displayName: Check SonarQube Quality Gate
+  - job: QualityGateCheck
+    displayName: 'Verify Quality Gate'
     steps:
     - script: |
         echo "Checking SonarQube Quality Gate"
-
-        # Install jq for JSON parsing
         sudo apt-get install jq -y
-
-        # Fetch the analysis ID (ceTaskId)
-        ANALYSIS_JSON=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/ce/component?component=$(SONAR_PROJECT_KEY)")
-        TASK_ID=$(echo "$ANALYSIS_JSON" | jq -r '.current.analysisId')
-
-        if [ -z "$TASK_ID" ] || [ "$TASK_ID" == "null" ]; then
-          echo "Error: Could not retrieve Task ID. SonarQube scan might have failed."
+        
+        # Wait for analysis to complete and get status
+        sleep 10
+        RESULT=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)")
+        echo "Quality Gate Result: $RESULT"
+        
+        # Extract status
+        STATUS=$(echo $RESULT | jq -r '.projectStatus.status')
+        echo "Quality Gate Status: $STATUS"
+        
+        # Fail if not passed
+        if [ "$STATUS" != "OK" ] && [ "$STATUS" != "PASSED" ]; then
+          echo "##[error]SonarQube Quality Gate failed with status: $STATUS"
           exit 1
         fi
-
-        echo "SonarQube Analysis ID: $TASK_ID"
-
-        # Wait for the analysis to complete
-        STATUS="PENDING"
-        while [ "$STATUS" == "PENDING" ] || [ "$STATUS" == "IN_PROGRESS" ]; do
-          sleep 5
-          STATUS_JSON=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/ce/task?id=$TASK_ID")
-          STATUS=$(echo "$STATUS_JSON" | jq -r '.task.status')
-          echo "Analysis Status: $STATUS"
-        done
-
-        # Fetch Quality Gate Result
-        QUALITY_JSON=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/qualitygates/project_status?analysisId=$TASK_ID")
-        QUALITY_STATUS=$(echo "$QUALITY_JSON" | jq -r '.projectStatus.status')
-
-        echo "Quality Gate Status: $QUALITY_STATUS"
-
-        if [ "$QUALITY_STATUS" != "PASSED" ]; then
-          echo "Quality Gate failed. Failing the pipeline."
-          exit 1
-        fi
-
-      displayName: Checking SonarQube Quality Gate
-
+      displayName: 'Check Quality Gate Status'
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
+  dependsOn: SonarQualityGate
   jobs:
     - job: BuildDockerImage
       displayName: 'Build , Scan & Push Docker Image'
