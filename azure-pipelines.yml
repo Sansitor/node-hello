@@ -77,15 +77,27 @@ stages:
     displayName: Check SonarQube Quality Gate
     steps:
     - script: |
+        echo "Installing jq..."
+        sudo apt-get install jq -y
+        
         echo "Checking SonarQube Quality Gate"
-        STATUS=$(curl -s -u $(SONAR_LOGIN_TOKEN): "$(SONAR_HOST_URL)/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)" | jq -r .projectStatus.status)
+        RESPONSE=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)")
+        echo "SonarQube Response: $RESPONSE"
+
+        STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+
+        if [ "$STATUS" == "null" ]; then
+          echo "Error: Unable to fetch quality gate status. Check SonarQube API response."
+          exit 1
+        fi
+
         echo "Quality Gate Status: $STATUS"
+
         if [ "$STATUS" != "PASSED" ]; then
           echo "Quality Gate failed. Failing the pipeline."
           exit 1
         fi
       displayName: Checking SonarQube Quality Gate
-      failOnStderr: true
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
