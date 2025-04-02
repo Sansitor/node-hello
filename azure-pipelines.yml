@@ -11,7 +11,7 @@ variables:
   IMAGE_TAG: "latest"
   SONAR_HOST_URL: "http://172.172.107.149:9000/"
   SONAR_PROJECT_KEY: "Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
-  SONAR_LOGIN_TOKEN: "sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45"
+  SONAR_LOGIN_TOKEN: sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45
   VM_IP: "172.172.107.149"
   VM_USERNAME: "ranjeet"
   VM_PASSWORD: "ranjeet@123qwe"
@@ -69,26 +69,32 @@ stages:
           -Dsonar.login=$(SONAR_LOGIN_TOKEN)
       displayName: Running Sonar Scanner
 
-- stage: QualityGateStatus
-  displayName: Quality Gate Status
-  dependsOn: SonarScan
+- stage: CheckSonarStatus
+  displayName: Check Sonar Project Status
+  dependsOn: PipelineContainerUpdate
   jobs:
-  - job: CheckQualityGate
-    displayName: Checking Quality Gate
+  - job: CheckProjectStatus
+    displayName: Checking Project Status
     steps:
     - script: |
-        echo "Checking Quality Gate status..."
-        SONAR_API_URL="$(SONAR_HOST_URL)/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)"
-        STATUS=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$SONAR_API_URL" | jq -r '.projectStatus.status')
+        echo "Checking Sonar Project Status..."
+        PROJECT_KEY="Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
+        SONAR_API_URL="http://172.172.107.149:9000/api/qualitygates/project_status?projectKey=$PROJECT_KEY"
+        SONAR_API_TOKEN="sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45"
 
-        if [ "$STATUS" == "OK" ]; then
-          echo "Quality Gate Passed ✅"
-          exit 0
-        else
-          echo "Quality Gate Failed ❌"
+        # Fetch the project status
+        RESPONSE=$(curl -u $SONAR_API_TOKEN: $SONAR_API_URL)
+
+        # Check if the status is OK
+        STATUS=$(echo $RESPONSE | grep -o '"status":"[^"]*' | awk -F ':"' '{print $2}')
+        
+        if [ "$STATUS" != "OK" ]; then
+          echo "Sonar Project status is not OK. Terminating the pipeline."
           exit 1
+        else
+          echo "Sonar Project status is OK. Continuing pipeline."
         fi
-      displayName: Checking Quality Gate
+      displayName: Checking Project Status
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
