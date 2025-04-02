@@ -68,6 +68,8 @@ stages:
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
+  dependsOn: SonarScan
+  condition: succeeded()
   jobs:
     - job: BuildDockerImage
       displayName: 'Build , Scan & Push Docker Image'
