@@ -2,7 +2,7 @@
 
 # Define container name and image
 CONTAINER_NAME="sanchit"
-IMAGE_NAME="sanchit"
+IMAGE_NAME="sanchitsehdev/sanchit"
 IMAGE_TAR="/home/ranjeet/sanchit.tar"
 
 echo "Loading Docker image from $IMAGE_TAR..."
