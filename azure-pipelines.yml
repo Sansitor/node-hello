@@ -77,6 +77,11 @@ stages:
     displayName: Checking Project Status
     steps:
     - script: |
+        echo "Installing jq"
+        sudo apt-get update && sudo apt-get install jq -y
+      displayName: Install jq
+
+    - script: |
         echo "Checking Sonar Project Status..."
         PROJECT_KEY="Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
         SONAR_API_URL="http://172.172.107.149:9000/api/qualitygates/project_status?projectKey=$PROJECT_KEY"
@@ -85,9 +90,13 @@ stages:
         # Fetch the project status
         RESPONSE=$(curl -u $SONAR_API_TOKEN: $SONAR_API_URL)
 
-        # Check if the status is OK
-        STATUS=$(echo $RESPONSE | grep -o '"status":"[^"]*' | awk -F ':"' '{print $2}')
+        # Print the raw response to debug
+        echo "Raw API Response: $RESPONSE"
         
+        # Extract the status correctly using jq
+        STATUS=$(echo $RESPONSE | jq -r '.projectStatus.status')
+        echo "Extracted Status: $STATUS"
+
         if [ "$STATUS" != "OK" ]; then
           echo "Sonar Project status is not OK. Terminating the pipeline."
           exit 1
@@ -95,6 +104,7 @@ stages:
           echo "Sonar Project status is OK. Continuing pipeline."
         fi
       displayName: Checking Project Status
+
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
