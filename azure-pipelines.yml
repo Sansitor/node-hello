@@ -78,22 +78,94 @@ stages:
     steps:
     - script: |
         echo "Checking SonarQube Quality Gate"
-        sudo apt-get install jq -y
+        sudo apt-get install jq -y curl -y
         
-        # Wait for analysis to complete and get status
-        sleep 10
-        RESULT=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)")
-        echo "Quality Gate Result: $RESULT"
+        # Wait for analysis to complete (SonarQube needs time to process)
+        echo "Waiting for SonarQube to process the analysis..."
+        sleep 30
         
-        # Extract status
-        STATUS=$(echo $RESULT | jq -r '.projectStatus.status')
-        echo "Quality Gate Status: $STATUS"
+        # Debug curl request
+        echo "Testing API connection..."
+        CURL_TEST=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/system/status")
+        echo "API Status Response: $CURL_TEST"
         
-        # Fail if not passed
-        if [ "$STATUS" != "OK" ] && [ "$STATUS" != "PASSED" ]; then
-          echo "##[error]SonarQube Quality Gate failed with status: $STATUS"
+        # Get the most recent task
+        TASK_JSON=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/ce/component?component=$(SONAR_PROJECT_KEY)")
+        echo "Task Response: $TASK_JSON"
+        
+        # Check if we got valid JSON
+        if ! echo "$TASK_JSON" | jq . > /dev/null 2>&1; then
+          echo "Error: Invalid JSON response from SonarQube API. Check credentials and URL."
+          echo "Raw response:"
+          echo "$TASK_JSON"
           exit 1
         fi
+        
+        # Get the latest analysis task ID
+        TASK_ID=$(echo "$TASK_JSON" | jq -r '.queue[0].id // .current.id // empty')
+        if [ -z "$TASK_ID" ]; then
+          echo "No analysis tasks found for project. Check project key."
+          exit 1
+        fi
+        
+        echo "Found analysis task: $TASK_ID"
+        
+        # Wait for analysis to complete
+        STATUS="PENDING"
+        MAX_ATTEMPTS=30
+        ATTEMPT=0
+        
+        while [ "$STATUS" == "PENDING" ] || [ "$STATUS" == "IN_PROGRESS" ]; do
+          ATTEMPT=$((ATTEMPT+1))
+          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+            echo "Timed out waiting for analysis to complete."
+            exit 1
+          fi
+          
+          echo "Checking task status (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+          sleep 5
+          
+          TASK_STATUS=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/ce/task?id=$TASK_ID")
+          if ! echo "$TASK_STATUS" | jq . > /dev/null 2>&1; then
+            echo "Error: Invalid JSON response from task status API."
+            continue
+          fi
+          
+          STATUS=$(echo "$TASK_STATUS" | jq -r '.task.status')
+          echo "Task status: $STATUS"
+        done
+        
+        if [ "$STATUS" == "FAILED" ]; then
+          echo "Analysis task failed."
+          exit 1
+        fi
+        
+        # Get quality gate status
+        ANALYSIS_ID=$(echo "$TASK_STATUS" | jq -r '.task.analysisId')
+        if [ -z "$ANALYSIS_ID" ] || [ "$ANALYSIS_ID" == "null" ]; then
+          echo "No analysis ID found in completed task."
+          exit 1
+        fi
+        
+        echo "Using analysis ID: $ANALYSIS_ID"
+        
+        QG_RESULT=$(curl -s -u "$(SONAR_LOGIN_TOKEN):" "$(SONAR_HOST_URL)/api/qualitygates/project_status?analysisId=$ANALYSIS_ID")
+        echo "Quality Gate Result: $QG_RESULT"
+        
+        if ! echo "$QG_RESULT" | jq . > /dev/null 2>&1; then
+          echo "Error: Invalid JSON response from quality gate API."
+          exit 1
+        fi
+        
+        QG_STATUS=$(echo "$QG_RESULT" | jq -r '.projectStatus.status')
+        echo "Quality Gate Status: $QG_STATUS"
+        
+        if [ "$QG_STATUS" != "OK" ] && [ "$QG_STATUS" != "PASSED" ]; then
+          echo "##[error]SonarQube Quality Gate failed with status: $QG_STATUS"
+          exit 1
+        fi
+        
+        echo "Quality Gate passed successfully!"
       displayName: 'Check Quality Gate Status'
 
 - stage: BuildAndPushImage
