@@ -11,7 +11,7 @@ variables:
   IMAGE_TAG: "latest"
   SONAR_HOST_URL: "http://172.172.107.149:9000/"
   SONAR_PROJECT_KEY: "Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
-  SONAR_LOGIN_TOKEN: $sqa_f71f655f648d5b73b4dda58588b81dae9e9edb69
+  SONAR_LOGIN_TOKEN: sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45
   VM_IP: "172.172.107.149"
   VM_USERNAME: "ranjeet"
   VM_PASSWORD: "ranjeet@123qwe"
@@ -27,7 +27,6 @@ stages:
         echo "Updating Container"
         sudo apt update
       displayName: Updating Container
-
   - job: UpgradingContainer
     displayName: Upgrading
     dependsOn: UpdateContainer
@@ -56,9 +55,13 @@ stages:
         source /etc/profile.d/sonar-scanner.sh
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
-
     - script : |
         echo "Running Sonar Scanner"
+        ls -la /opt/sonar-scanner
+        cat /etc/profile.d/sonar-scanner.sh
+        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+        source /etc/profile.d/sonar-scanner.sh
         sonar-scanner \
           -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
           -Dsonar.sources=. \
@@ -68,8 +71,6 @@ stages:
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
-  dependsOn: SonarScan
-  condition: succeeded()
   jobs:
     - job: BuildDockerImage
       displayName: 'Build , Scan & Push Docker Image'
@@ -80,6 +81,7 @@ stages:
           displayName: 'Logging into Container Registries'
 
         - script: |  
+            echo "Building image: $(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
             docker build . -t "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
           displayName: 'Building Docker Image'
 
@@ -110,19 +112,18 @@ stages:
           displayName: 'Publish Docker Image Tar File'
         
 - stage: CopyToVM
-  displayName: 'Copy Docker Image to VM'
+  displayName: 'Copy to VM'
   jobs:
     - job: CopyToVM
-      displayName: 'Copying Image Tar file to VM'
+      displayName: 'Copying Image Tar file to VM.'
       steps:
       - download: current
         artifact: docker_image_tar
         displayName: 'Download Docker Image Tar'
-        
       - script: |
          docker load -i $(Pipeline.Workspace)/docker_image_tar/sanchit.tar
          sudo apt -y install sshpass
          mkdir -p ~/.ssh
          ssh-keyscan $(VM_IP) >> ~/.ssh/known_hosts
-         sshpass -p "$(VM_PASSWORD)" scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/$(VM_USERNAME)/
+         sshpass -p $(VM_PASSWORD) scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
