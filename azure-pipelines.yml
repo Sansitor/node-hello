@@ -71,7 +71,7 @@ stages:
 
 - stage: CheckSonarStatus
   displayName: Check Sonar Project Status
-  dependsOn: PipelineContainerUpdate
+  dependsOn: SonarScan
   jobs:
   - job: CheckProjectStatus
     displayName: Checking Project Status
