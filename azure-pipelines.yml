@@ -12,6 +12,7 @@ variables:
   SONAR_HOST_URL: "http://172.172.107.149:9000/"
   SONAR_PROJECT_KEY: "Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
   SONAR_LOGIN_TOKEN: sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45
+  SONAR_API_URL: "http://172.172.107.149:9000/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)"
   VM_IP: "172.172.107.149"
   VM_USERNAME: "ranjeet"
   VM_PASSWORD: "ranjeet@123qwe"
@@ -84,12 +85,9 @@ stages:
 
     - script: |
         echo "Checking Sonar Project Status..."
-        PROJECT_KEY="Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
-        SONAR_API_URL="http://172.172.107.149:9000/api/qualitygates/project_status?projectKey=$PROJECT_KEY"
-        SONAR_API_TOKEN="sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45"
 
         # Fetch the project status
-        RESPONSE=$(curl -u $SONAR_API_TOKEN: $SONAR_API_URL)
+        RESPONSE=$(curl -u $(SONAR_LOGIN_TOKEN): $(SONAR_API_URL))
 
         # Print the raw response to debug
         echo "Raw API Response: $RESPONSE"
