@@ -20,7 +20,6 @@ variables:
 stages:
 - stage: PipelineContainerUpdate
   displayName: Updating Container
-  trigger: manual
   jobs:
   - job: UpdateContainer
     displayName: Updating
