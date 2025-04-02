@@ -162,4 +162,5 @@ stages:
          ssh-keyscan $(VM_IP) >> ~/.ssh/known_hosts
          sshpass -p $(VM_PASSWORD) scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
          sshpass -p $(VM_PASSWORD) scp $(Build.SourcesDirectory)/container_start.sh $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
+         sshpass -p $(VM_PASSWORD) ssh $(VM_USERNAME)@$(VM_IP) 'bash /home/ranjeet/container_start.sh'
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
