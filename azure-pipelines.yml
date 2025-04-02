@@ -1,6 +1,5 @@
 trigger:
 - main
-- dev
 
 pool:
   vmImage: ubuntu-latest
@@ -8,13 +7,14 @@ pool:
 variables:
   DOCKER_USERNAME: $(DockerUsername)
   DOCKER_PASSWORD: $(DockerPassword)
-  BASE_IMAGE_NAME: "sanchit"
+  IMAGE_NAME: "sanchit"
   IMAGE_TAG: "latest"
-  # Dynamic image name based on branch
-  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
-    IMAGE_NAME: "$(BASE_IMAGE_NAME)-main"
-  ${{ if eq(variables['Build.SourceBranchName'], 'dev') }}:
-    IMAGE_NAME: "$(BASE_IMAGE_NAME)-dev"
+  SONAR_HOST_URL: "http://172.172.107.149:9000/"
+  SONAR_PROJECT_KEY: "Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU"
+  SONAR_LOGIN_TOKEN: $sqa_f71f655f648d5b73b4dda58588b81dae9e9edb69
+  VM_IP: "172.172.107.149"
+  VM_USERNAME: "ranjeet"
+  VM_PASSWORD: "ranjeet@123qwe"
 
 stages:
 - stage: PipelineContainerUpdate
@@ -27,6 +27,7 @@ stages:
         echo "Updating Container"
         sudo apt update
       displayName: Updating Container
+
   - job: UpgradingContainer
     displayName: Upgrading
     dependsOn: UpdateContainer
@@ -55,18 +56,14 @@ stages:
         source /etc/profile.d/sonar-scanner.sh
         echo "Sonar Scanner installed successfully"
       displayName: Installing Sonar Scanner
+
     - script : |
         echo "Running Sonar Scanner"
-        ls -la /opt/sonar-scanner
-        cat /etc/profile.d/sonar-scanner.sh
-        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        source /etc/profile.d/sonar-scanner.sh
         sonar-scanner \
-          -Dsonar.projectKey=Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU \
+          -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
           -Dsonar.sources=. \
-          -Dsonar.host.url=http://128.24.102.209:9000/ \
-          -Dsonar.login=sqp_00bfc5edbc114030be07515080b2bba0ccde3655
+          -Dsonar.host.url=$(SONAR_HOST_URL) \
+          -Dsonar.login=$(SONAR_LOGIN_TOKEN)
       displayName: Running Sonar Scanner
 
 - stage: BuildAndPushImage
@@ -77,11 +74,10 @@ stages:
       steps:
         - script: |
             echo "Logging in to Docker Hub..."
-            echo $(dockerPassword) | docker login -u $(dockerUsername) --password-stdin
+            echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
           displayName: 'Logging into Container Registries'
 
         - script: |  
-            echo "Building image: $(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
             docker build . -t "$(DOCKER_USERNAME)/$(IMAGE_NAME):$(IMAGE_TAG)"
           displayName: 'Building Docker Image'
 
@@ -112,18 +108,19 @@ stages:
           displayName: 'Publish Docker Image Tar File'
         
 - stage: CopyToVM
-  displayName: 'Copy to VM'
+  displayName: 'Copy Docker Image to VM'
   jobs:
     - job: CopyToVM
-      displayName: 'Copying Image Tar file to VM.'
+      displayName: 'Copying Image Tar file to VM'
       steps:
       - download: current
         artifact: docker_image_tar
         displayName: 'Download Docker Image Tar'
+        
       - script: |
          docker load -i $(Pipeline.Workspace)/docker_image_tar/sanchit.tar
          sudo apt -y install sshpass
          mkdir -p ~/.ssh
-         ssh-keyscan 128.24.102.209 >> ~/.ssh/known_hosts
-         sshpass -p "ranjeet@123qwe" scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar ranjeet@128.24.102.209:/home/ranjeet/
+         ssh-keyscan $(VM_IP) >> ~/.ssh/known_hosts
+         sshpass -p "$(VM_PASSWORD)" scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/$(VM_USERNAME)/
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
