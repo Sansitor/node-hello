@@ -10,7 +10,7 @@ variables:
   IMAGE_NAME: "sanchit"
   IMAGE_TAG: "latest"
   SONAR_HOST_URL: "http://172.172.107.149:9000/"
-  SONAR_PROJECT_KEY: "Sansitor_node-hello_AZXmO5jR16Bxdig4f5oU"
+  SONAR_PROJECT_KEY: "Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
   SONAR_LOGIN_TOKEN: $sqa_f71f655f648d5b73b4dda58588b81dae9e9edb69
   VM_IP: "172.172.107.149"
   VM_USERNAME: "ranjeet"
