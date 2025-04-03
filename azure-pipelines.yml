@@ -90,9 +90,7 @@ stages:
           az webapp config container set \
             --name sanchit1 \
             --resource-group Template \
-            --container-image-name "sanchitsehdev/sanchit" \
-            --container-registry-user "sanchitsehdev" \
-            --container-registry-password "Tg@60071304"
+            --container-image-name "sanchitsehdev/sanchit"
 
           
         
