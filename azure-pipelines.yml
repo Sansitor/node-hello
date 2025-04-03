@@ -89,7 +89,7 @@ stages:
 
           az webapp config container set \
             --name sanchit1 \
-            --resource-group Template \
+            --resource-group template \
             --container-image-name "sanchitsehdev/sanchit"
 
           
