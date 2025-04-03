@@ -9,13 +9,9 @@ variables:
   DOCKER_PASSWORD: $(DockerPassword)
   IMAGE_NAME: "sanchit"
   IMAGE_TAG: "latest"
-  SONAR_HOST_URL: "http://172.172.107.149:9000/"
-  SONAR_PROJECT_KEY: "Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
-  SONAR_LOGIN_TOKEN: sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45
-  SONAR_API_URL: "http://172.172.107.149:9000/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)"
-  VM_IP: "172.172.107.149"
-  VM_USERNAME: "ranjeet"
-  VM_PASSWORD: "ranjeet@123qwe"
+  VM_IP: "128.24.107.161"
+  VM_USERNAME: "sanchit"
+  VM_PASSWORD: "sanchit@123qwe"
 
 stages:
 - stage: PipelineContainerUpdate
@@ -36,73 +32,6 @@ stages:
         echo "Upgrading Container"
         sudo apt update
       displayName: Upgrading Container
-      
-- stage: SonarScan
-  displayName: Sonar Scan
-  dependsOn: PipelineContainerUpdate
-  jobs:
-  - job: SonarScan
-    displayName: Sonar Scan
-    steps:
-    - script: |
-        echo "Installing Sonar Scanner"
-        sudo apt install openjdk-11-jre -y
-        curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
-        unzip sonar-scanner.zip
-        sudo mv sonar-scanner-*/ /opt/sonar-scanner
-        ls -la /opt/sonar-scanner
-        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        source /etc/profile.d/sonar-scanner.sh
-        echo "Sonar Scanner installed successfully"
-      displayName: Installing Sonar Scanner
-    - script : |
-        echo "Running Sonar Scanner"
-        ls -la /opt/sonar-scanner
-        cat /etc/profile.d/sonar-scanner.sh
-        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        source /etc/profile.d/sonar-scanner.sh
-        sonar-scanner \
-          -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=$(SONAR_HOST_URL) \
-          -Dsonar.login=$(SONAR_LOGIN_TOKEN)
-      displayName: Running Sonar Scanner
-
-- stage: CheckSonarStatus
-  displayName: Check Sonar Project Status
-  dependsOn: SonarScan
-  jobs:
-  - job: CheckProjectStatus
-    displayName: Checking Project Status
-    steps:
-    - script: |
-        echo "Installing jq"
-        sudo apt-get update && sudo apt-get install jq -y
-      displayName: Install jq
-
-    - script: |
-        echo "Checking Sonar Project Status..."
-
-        # Fetch the project status
-        RESPONSE=$(curl -u $(SONAR_LOGIN_TOKEN): $(SONAR_API_URL))
-
-        # Print the raw response to debug
-        echo "Raw API Response: $RESPONSE"
-        
-        # Extract the status correctly using jq
-        STATUS=$(echo $RESPONSE | jq -r '.projectStatus.status')
-        echo "Extracted Status: $STATUS"
-
-        if [ "$STATUS" != "OK" ]; then
-          echo "Sonar Project status is not OK. Terminating the pipeline."
-          exit 1
-        else
-          echo "Sonar Project status is OK. Continuing pipeline."
-        fi
-      displayName: Checking Project Status
-
 
 - stage: BuildAndPushImage
   displayName: 'Build and Push Docker Image'
@@ -160,7 +89,7 @@ stages:
          sudo apt -y install sshpass
          mkdir -p ~/.ssh
          ssh-keyscan $(VM_IP) >> ~/.ssh/known_hosts
-         sshpass -p $(VM_PASSWORD) scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
-         sshpass -p $(VM_PASSWORD) scp $(Build.SourcesDirectory)/container_start.sh $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
-         sshpass -p $(VM_PASSWORD) ssh $(VM_USERNAME)@$(VM_IP) 'bash /home/ranjeet/container_start.sh'
+         sshpass -p $(VM_PASSWORD) scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/sanchit/
+         sshpass -p $(VM_PASSWORD) scp $(Build.SourcesDirectory)/container_start.sh $(VM_USERNAME)@$(VM_IP):/home/sanchit/
+         sshpass -p $(VM_PASSWORD) ssh $(VM_USERNAME)@$(VM_IP) 'bash /home/sanchit/container_start.sh'
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
