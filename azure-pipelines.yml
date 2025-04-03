@@ -12,6 +12,9 @@ variables:
   VM_IP: "128.24.107.161"
   VM_USERNAME: "sanchit"
   VM_PASSWORD: "sanchit@123qwe"
+  ARM_CLIENT_ID: "fce0ee56-a655-44bb-bf7c-2f204cdf896c"
+  ARM_CLIENT_SECRET: $(ARM_Secret)
+  ARM_TENANT_ID: "98581d53-6698-4894-b34e-b83cb0be7be2"
 
 stages:
 - stage: PipelineContainerUpdate
