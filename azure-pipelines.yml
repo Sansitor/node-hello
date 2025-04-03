@@ -85,7 +85,7 @@ stages:
       displayName: Deploying on Web App
       steps:
       - script:
-          az login --service-principal -u $(ARM_CLIENT_ID) -P $(ARM_CLIENT_SECRET) --TENANT $(ARM_TENANT_ID)
+          az login --service-principal -u $(ARM_CLIENT_ID) -p $(ARM_CLIENT_SECRET) --tenant $(ARM_TENANT_ID)
 
           az webapp config container set \
             --name sanchit1 \
