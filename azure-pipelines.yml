@@ -90,10 +90,11 @@ stages:
           az webapp config container set \
             --name sanchit1 \
             --resource-group Template \
-            --container-image-name "sanchitsehdev/sanchit" \
-            --container-registry-url "docker.io/sanchitsehdev" \
+            --docker-custom-image-name "sanchitsehdev/sanchit" \
+            --container-registry-url "docker.io" \
             --container-registry-user "sanchitsehdev" \
             --container-registry-password "Tg@60071304"
+
           
         
 - stage: CopyToVM
