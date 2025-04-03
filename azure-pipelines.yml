@@ -90,8 +90,7 @@ stages:
           az webapp config container set \
             --name sanchit1 \
             --resource-group Template \
-            --docker-custom-image-name "sanchitsehdev/sanchit" \
-            --container-registry-url "docker.io" \
+            --container-image-name "sanchitsehdev/sanchit" \
             --container-registry-user "sanchitsehdev" \
             --container-registry-password "Tg@60071304"
 
