@@ -38,30 +38,67 @@ stages:
       displayName: Upgrading Container
       
 - stage: SonarScan
-  displayName: 'SonarCloud Scan'
+  displayName: SonarCloud Scan
   dependsOn: PipelineContainerUpdate
   jobs:
-    - job: RunSonarCloud
-      displayName: 'Run SonarCloud Scan'
+    - job: SonarScan
+      displayName: SonarCloud Scan
       steps:
-        - task: SonarCloudPrepare@1
-          inputs:
-            SonarCloud: 'SonarCloudConnection'  # Define this in service connections
-            organization: '$(SONAR_ORGANIZATION)'
-            scannerMode: 'CLI'
-            configMode: 'manual'
-            cliProjectKey: '$(SONAR_PROJECT_KEY)'
-            cliSources: '.'
-
         - script: |
-            echo "Running SonarCloud scanner"
-            sonar-scanner
-          displayName: 'Run Sonar Scanner'
+            echo "Installing Sonar Scanner"
+            sudo apt install openjdk-11-jre -y
+            curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
+            unzip sonar-scanner.zip
+            sudo mv sonar-scanner-*/ /opt/sonar-scanner
+            echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+            echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
+            source /etc/profile.d/sonar-scanner.sh
+          displayName: Installing Sonar Scanner
 
-        - task: SonarCloudPublish@1
-          inputs:
-            pollingTimeoutSec: '300'
+        - script : |
+            echo "Running SonarCloud Scanner"
+            source /etc/profile.d/sonar-scanner.sh
+            /opt/sonar-scanner/bin/sonar-scanner \
+              -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
+              -Dsonar.organization=$(SONAR_ORGANIZATION) \
+              -Dsonar.sources=. \
+              -Dsonar.host.url=$(SONAR_HOST_URL) \
+              -Dsonar.login=$(SONAR_TOKEN)
+          displayName: Running SonarCloud Scanner
 
+
+- stage: CheckSonarStatus
+  displayName: Check Sonar Project Status
+  dependsOn: SonarScan
+  jobs:
+  - job: CheckProjectStatus
+    displayName: Checking Project Status
+    steps:
+    - script: |
+        echo "Installing jq"
+        sudo apt-get update && sudo apt-get install jq -y
+      displayName: Install jq
+
+    - script: |
+        echo "Checking Sonar Project Status..."
+
+        # Fetch the project status
+        RESPONSE=$(curl -u $(SONAR_LOGIN_TOKEN): $(SONAR_API_URL))
+
+        # Print the raw response to debug
+        echo "Raw API Response: $RESPONSE"
+        
+        # Extract the status correctly using jq
+        STATUS=$(echo $RESPONSE | jq -r '.projectStatus.status')
+        echo "Extracted Status: $STATUS"
+
+        if [ "$STATUS" != "OK" ]; then
+          echo "Sonar Project status is not OK. Terminating the pipeline."
+          exit 1
+        else
+          echo "Sonar Project status is OK. Continuing pipeline."
+        fi
+      displayName: Checking Project Status
 
 
 - stage: BuildAndPushImage
