@@ -136,11 +136,27 @@ stages:
         artifact: docker_image_tar
         displayName: 'Download Docker Image Tar'
       - script: |
+         # Debug - check files exist
+         ls -la $(Pipeline.Workspace)/docker_image_tar/
+         ls -la $(Build.SourcesDirectory)/
+         
          docker load -i $(Pipeline.Workspace)/docker_image_tar/sanchit.tar
          sudo apt -y install sshpass
          mkdir -p ~/.ssh
          ssh-keyscan $(VM_IP) >> ~/.ssh/known_hosts
+         
+         # Copy the Docker image tar
          sshpass -p $(VM_PASSWORD) scp $(Pipeline.Workspace)/docker_image_tar/sanchit.tar $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
-         sshpass -p $(VM_PASSWORD) scp $(Build.SourcesDirectory)/container_start.sh $(VM_USERNAME)@$(VM_IP):/home/ranjeet/
-         sshpass -p $(VM_PASSWORD) ssh $(VM_USERNAME)@$(VM_IP) 'bash /home/ranjeet/container_start.sh'
+         
+         # Create container_start.sh if missing
+         echo '#!/bin/bash
+         cd /home/ranjeet
+         docker load -i sanchit.tar
+         docker run -d sanchit:latest' > ./temp_container_start.sh
+         
+         # Copy the generated script
+         sshpass -p $(VM_PASSWORD) scp ./temp_container_start.sh $(VM_USERNAME)@$(VM_IP):/home/ranjeet/container_start.sh
+         
+         # Make it executable and run
+         sshpass -p $(VM_PASSWORD) ssh $(VM_USERNAME)@$(VM_IP) 'chmod +x /home/ranjeet/container_start.sh && bash /home/ranjeet/container_start.sh'
         displayName: 'Copy Docker Image Tar to Azure VM using Username & Password'
