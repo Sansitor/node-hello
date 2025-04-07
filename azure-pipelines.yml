@@ -12,7 +12,7 @@ variables:
   SONAR_ORGANIZATION: "sansitor"
   SONAR_PROJECT_KEY: "Sansitor_node-hello"
   SONAR_TOKEN: $(SonarCloudToken)
-  VM_IP: "172.172.107.149"
+  VM_IP: "20.57.119.143"
   VM_USERNAME: "ranjeet"
   VM_PASSWORD: "ranjeet@123qwe"
 
