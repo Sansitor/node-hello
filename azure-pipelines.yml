@@ -13,8 +13,8 @@ variables:
   SONAR_PROJECT_KEY: "Sansitor_node-hello"
   SONAR_TOKEN: $(SonarCloudToken)
   VM_IP: "20.57.119.143"
-  VM_USERNAME: "ranjeet"
-  VM_PASSWORD: "ranjeet@123qwe"
+  VM_USERNAME: "sanchit"
+  VM_PASSWORD: "sanchit@123qwe"
 
 stages:
 - stage: PipelineContainerUpdate
@@ -46,7 +46,7 @@ stages:
     - task: SonarCloudPrepare@1
       displayName: 'Prepare SonarCloud Analysis'
       inputs:
-        SonarCloud: 'SonarCloudConnection' # This is the name of the SonarCloud service connection you need to create
+        SonarCloud: 'SonarCloudConnection'
         organization: '$(SONAR_ORGANIZATION)'
         scannerMode: 'CLI'
         configMode: 'manual'
