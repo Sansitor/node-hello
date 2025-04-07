@@ -9,13 +9,13 @@ variables:
   DOCKER_PASSWORD: $(DockerPassword)
   IMAGE_NAME: "sanchit"
   IMAGE_TAG: "latest"
-  SONAR_HOST_URL: "http://172.172.107.149:9000/"
-  SONAR_PROJECT_KEY: "Sansitor_node-hello_AZX1oNOx4D1I2PVSzYCV"
-  SONAR_LOGIN_TOKEN: sqa_355d2cc7c5a08b4edf74ff2f377f613a9dc0ea45
-  SONAR_API_URL: "http://172.172.107.149:9000/api/qualitygates/project_status?projectKey=$(SONAR_PROJECT_KEY)"
-  VM_IP: "172.172.107.149"
-  VM_USERNAME: "ranjeet"
-  VM_PASSWORD: "ranjeet@123qwe"
+  SONAR_HOST_URL: "https://sonarcloud.io"
+  SONAR_PROJECT_KEY: "Sansitor_node-hello"
+  SONAR_ORGANIZATION: "sansitor"
+  SONAR_TOKEN: "b82435da279c822822d17553d2a6432a9b655b6c"
+  VM_IP: "20.57.119.143"
+  VM_USERNAME: "sanchit"
+  VM_PASSWORD: "sanchit@123qwe"
 
 stages:
 - stage: PipelineContainerUpdate
@@ -38,70 +38,30 @@ stages:
       displayName: Upgrading Container
       
 - stage: SonarScan
-  displayName: Sonar Scan
+  displayName: 'SonarCloud Scan'
   dependsOn: PipelineContainerUpdate
   jobs:
-  - job: SonarScan
-    displayName: Sonar Scan
-    steps:
-    - script: |
-        echo "Installing Sonar Scanner"
-        sudo apt install openjdk-11-jre -y
-        curl -sS https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -o sonar-scanner.zip
-        unzip sonar-scanner.zip
-        sudo mv sonar-scanner-*/ /opt/sonar-scanner
-        ls -la /opt/sonar-scanner
-        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        source /etc/profile.d/sonar-scanner.sh
-        echo "Sonar Scanner installed successfully"
-      displayName: Installing Sonar Scanner
-    - script : |
-        echo "Running Sonar Scanner"
-        ls -la /opt/sonar-scanner
-        cat /etc/profile.d/sonar-scanner.sh
-        echo "export SONAR_SCANNER_HOME=/opt/sonar-scanner" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        echo "export PATH=\$PATH:\$SONAR_SCANNER_HOME/bin" | sudo tee -a /etc/profile.d/sonar-scanner.sh
-        source /etc/profile.d/sonar-scanner.sh
-        sonar-scanner \
-          -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=$(SONAR_HOST_URL) \
-          -Dsonar.login=$(SONAR_LOGIN_TOKEN)
-      displayName: Running Sonar Scanner
+    - job: RunSonarCloud
+      displayName: 'Run SonarCloud Scan'
+      steps:
+        - task: SonarCloudPrepare@1
+          inputs:
+            SonarCloud: 'SonarCloudConnection'  # Define this in service connections
+            organization: '$(SONAR_ORGANIZATION)'
+            scannerMode: 'CLI'
+            configMode: 'manual'
+            cliProjectKey: '$(SONAR_PROJECT_KEY)'
+            cliSources: '.'
 
-- stage: CheckSonarStatus
-  displayName: Check Sonar Project Status
-  dependsOn: SonarScan
-  jobs:
-  - job: CheckProjectStatus
-    displayName: Checking Project Status
-    steps:
-    - script: |
-        echo "Installing jq"
-        sudo apt-get update && sudo apt-get install jq -y
-      displayName: Install jq
+        - script: |
+            echo "Running SonarCloud scanner"
+            sonar-scanner
+          displayName: 'Run Sonar Scanner'
 
-    - script: |
-        echo "Checking Sonar Project Status..."
+        - task: SonarCloudPublish@1
+          inputs:
+            pollingTimeoutSec: '300'
 
-        # Fetch the project status
-        RESPONSE=$(curl -u $(SONAR_LOGIN_TOKEN): $(SONAR_API_URL))
-
-        # Print the raw response to debug
-        echo "Raw API Response: $RESPONSE"
-        
-        # Extract the status correctly using jq
-        STATUS=$(echo $RESPONSE | jq -r '.projectStatus.status')
-        echo "Extracted Status: $STATUS"
-
-        if [ "$STATUS" != "OK" ]; then
-          echo "Sonar Project status is not OK. Terminating the pipeline."
-          exit 1
-        else
-          echo "Sonar Project status is OK. Continuing pipeline."
-        fi
-      displayName: Checking Project Status
 
 
 - stage: BuildAndPushImage
