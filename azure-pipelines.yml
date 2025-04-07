@@ -46,19 +46,12 @@ stages:
     - task: SonarCloudPrepare@1
       displayName: 'Prepare SonarCloud Analysis'
       inputs:
-        SonarCloud: 'SonarCloudConnection'
+        SonarCloud: 'SonarCloudConnection' # This is the name of the SonarCloud service connection you need to create
         organization: '$(SONAR_ORGANIZATION)'
         scannerMode: 'CLI'
         configMode: 'manual'
         cliProjectKey: '$(SONAR_PROJECT_KEY)'
         cliSources: '.'
-        extraProperties: |
-          # Disable Automatic Analysis conflict
-          sonar.pullrequest.github.summary_comment=true
-          sonar.pullrequest.provider=GitHub
-          sonar.scm.provider=git
-          # Force the analysis to bypass automatic analysis
-          sonar.projectVersion=1.0
     
     - task: SonarCloudAnalyze@1
       displayName: 'Run SonarCloud Analysis'
