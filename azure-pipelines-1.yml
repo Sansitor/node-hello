@@ -39,7 +39,7 @@ stages:
       
 - stage: SonarScan
   displayName: Sonar Scan
-  dependsOn: PipelineContainerUpdate
+  # dependsOn: PipelineContainerUpdate
   jobs:
   - job: SonarScan
     displayName: Sonar Scan
