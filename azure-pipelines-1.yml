@@ -18,28 +18,28 @@ variables:
   VM_PASSWORD: "ranjeet@123qwe"
 
 stages:
-# - stage: PipelineContainerUpdate
-#   displayName: Updating Container
-#   jobs:
-#   - job: UpdateContainer
-#     displayName: Updating
-#     steps:
-#     - script: |
-#         echo "Updating Container"
-#         sudo apt update
-#       displayName: Updating Container
-#   - job: UpgradingContainer
-#     displayName: Upgrading
-#     dependsOn: UpdateContainer
-#     steps:
-#     - script: |
-#         echo "Upgrading Container"
-#         sudo apt update
-#       displayName: Upgrading Container
+- stage: PipelineContainerUpdate
+  displayName: Updating Container
+  jobs:
+  - job: UpdateContainer
+    displayName: Updating
+    steps:
+    - script: |
+        echo "Updating Container"
+        sudo apt update
+      displayName: Updating Container
+  - job: UpgradingContainer
+    displayName: Upgrading
+    dependsOn: UpdateContainer
+    steps:
+    - script: |
+        echo "Upgrading Container"
+        sudo apt update
+      displayName: Upgrading Container
       
 - stage: SonarScan
   displayName: Sonar Scan
-  # dependsOn: PipelineContainerUpdate
+  dependsOn: PipelineContainerUpdate
   jobs:
   - job: SonarScan
     displayName: Sonar Scan
